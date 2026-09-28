@@ -199,12 +199,10 @@
       <div class="search-section">
         <h3><i class="fa-solid fa-layer-group"></i> Fond de carte</h3>
         <div class="basemap-selector">
-          <label class="basemap-option"><input type="radio" name="basemap" value="osm" checked><div class="basemap-preview"><div class="basemap-thumb" style="background: linear-gradient(135deg, #e0f2fe 0%, #bae6fd 100%);"></div><div class="basemap-label">OpenStreetMap</div></div></label>
-          <label class="basemap-option"><input type="radio" name="basemap" value="satellite"><div class="basemap-preview"><div class="basemap-thumb" style="background: linear-gradient(135deg, #1e293b 0%, #334155 100%);"></div><div class="basemap-label">Satellite</div></div></label>
-          <label class="basemap-option"><input type="radio" name="basemap" value="hybrid"><div class="basemap-preview"><div class="basemap-thumb" style="background: linear-gradient(135deg, #064e3b 0%, #065f46 100%);"></div><div class="basemap-label">Hybride</div></div></label>
+          <label class="basemap-option"><input type="radio" name="basemap" value="satellite" checked><div class="basemap-preview"><div class="basemap-thumb" style="background: linear-gradient(135deg, #1e293b 0%, #334155 100%);"></div><div class="basemap-label">Satellite</div></div></label>
+          <label class="basemap-option"><input type="radio" name="basemap" value="osm"><div class="basemap-preview"><div class="basemap-thumb" style="background: linear-gradient(135deg, #e0f2fe 0%, #bae6fd 100%);"></div><div class="basemap-label">OpenStreetMap</div></div></label>
           <label class="basemap-option"><input type="radio" name="basemap" value="topo"><div class="basemap-preview"><div class="basemap-thumb" style="background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);"></div><div class="basemap-label">Topographique</div></div></label>
           <label class="basemap-option"><input type="radio" name="basemap" value="dark"><div class="basemap-preview"><div class="basemap-thumb" style="background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);"></div><div class="basemap-label">Sombre</div></div></label>
-          <label class="basemap-option"><input type="radio" name="basemap" value="terrain"><div class="basemap-preview"><div class="basemap-thumb" style="background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);"></div><div class="basemap-label">Relief</div></div></label>
         </div>
       </div>
 
@@ -266,8 +264,8 @@
       <div class="kpi-strip">
         <div class="kpi-card"><span id="kpi-total">0</span><small>Total Lotissements</small></div>
         <div class="kpi-card"><span id="kpi-area">0</span><small>Surface Terrain (m²)</small></div>
-        <div class="kpi-card"><span id="kpi-moa">0</span><small>Maîtres d'Ouvrage</small></div>
-        <div class="kpi-card"><span id="kpi-avg">0</span><small>Moyenne (m²)</small></div>
+        <div class="kpi-card"><span id="kpi-vendable">0</span><small>Surface Vendable (m²)</small></div>
+        <div class="kpi-card"><span id="kpi-equip">0</span><small>Contribution s/Indemnisation (m²)</small></div>
       </div>
       <div class="split-view">
         <div class="map-pane" id="map-pane">
@@ -453,12 +451,10 @@
     const baseMaps = {
       osm: L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OSM', maxZoom: 19 }),
       satellite: L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { attribution: '© Esri', maxZoom: 19 }),
-      hybrid: L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { attribution: '© Esri', maxZoom: 19 }),
       topo: L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', { attribution: '© OpenTopoMap', maxZoom: 17 }),
       dark: L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { attribution: '© CARTO', maxZoom: 19 }),
-      terrain: L.tileLayer('https://{s}.tile.thunderforest.com/landscape/{z}/{x}/{y}.png?apikey=YOUR_API_KEY', { attribution: '© Thunderforest', maxZoom: 19 })
     };
-    let currentBaseMap = baseMaps.osm; currentBaseMap.addTo(map);
+    let currentBaseMap = baseMaps.satellite; currentBaseMap.addTo(map);
     document.querySelectorAll('input[name="basemap"]').forEach(radio => {
       radio.addEventListener('change', (e) => { map.removeLayer(currentBaseMap); currentBaseMap = baseMaps[e.target.value]; map.addLayer(currentBaseMap); });
     });
@@ -466,9 +462,12 @@
     const overlayLayers = {};
     // D'autres couches (Communes, Voirie...) peuvent être ajoutées de la même façon,
     // avec leur propre "file": 'MonFichier.geojson'.
+    // L'ORDRE (panneau de couches + empilement sur la carte) est piloté par "order" :
+    // plus petit = affiché en premier dans le panneau ET rendu au-dessus sur la carte.
+    // Pour changer l'ordre, il suffit de modifier ce chiffre, rien d'autre à toucher.
     const layerConfigs = [
-      { id: 'lotissements', name: 'Lotissements', icon: '🏘️', color: '#f59e0b', type: 'fill', file: 'DB-Lotissements.geojson', enabled: true },
-      { id: 'equipements', name: 'Équipements', icon: '📍', color: '#000000', type: 'point', file: 'DB-Equipements.geojson', enabled: true }
+      { id: 'equipements', name: 'Équipements', icon: '📐', color: '#000000', type: 'fill', file: 'DB-Equipements Lotissement.geojson', enabled: true, order: 1 },
+      { id: 'lotissements', name: 'Lotissements', icon: '🏘️', color: '#f59e0b', type: 'fill', file: 'DB-Lotissements.geojson', enabled: true, order: 2 }
     ];
 
     let lotsLayer, originalFeatures = [], currentFeature = null, currentLayer = null;
@@ -490,14 +489,45 @@
       return Math.abs(area) / 2;
     }
 
+    function getVendableM2(feature) {
+      const p = feature.properties || {};
+      const cedee = parseNum(p['Contributi']);
+      return Math.max(cedee);
+    }
+
+    // Additionne toutes les surfaces "X m²" présentes dans le champ texte "Equipement"
+    // (ex: "Equipement 1 : 745.62 m²; Equipement 2 : 530 m²; ...") -> surfaces cédées
+    // sans droit à indemnisation (article 5.2 du règlement d'aménagement).
+    function getEquipmentSurfaceM2(feature) {
+      const raw = feature.properties?.Equipement;
+      if (!raw || raw === '_') return 0;
+      const s = String(raw).replace(/\n/g, ' ');
+      const regex = /(\d[\d\s]*[.,]?\d*)\s*m\s*²/gi;
+      let total = 0, match;
+      while ((match = regex.exec(s)) !== null) {
+        const num = parseFloat(match[1].replace(/\s+/g, '').replace(',', '.'));
+        if (!isNaN(num)) total += num;
+      }
+      return total;
+    }
+
     function fmtNum(n) { return Math.round(n).toLocaleString('fr-FR'); }
 
     async function initLayers() {
       const layerList = document.getElementById('layer-list'); layerList.innerHTML = '';
-      for (const config of layerConfigs) {
+      // Panneau : du plus petit "order" au plus grand (équipements d'abord).
+      const panelOrder = [...layerConfigs].sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+      // Carte : on ajoute d'abord les couches de plus grand "order" (le bas de la pile),
+      // pour que celles de plus petit "order" (listées en premier) se retrouvent au-dessus.
+      const stackOrder = [...panelOrder].reverse();
+
+      panelOrder.forEach(config => {
         const layerItem = document.createElement('div'); layerItem.className = 'layer-item';
         layerItem.innerHTML = `<div class="layer-info"><div class="layer-icon" style="background:${config.color}20; color:${config.color}">${config.icon}</div><div class="layer-name">${config.name}</div><div class="layer-status" id="status-${config.id}">⏳</div></div><label class="toggle-switch"><input type="checkbox" id="toggle-${config.id}" ${config.enabled ? 'checked' : ''}><span class="toggle-slider"></span></label>`;
         layerList.appendChild(layerItem);
+      });
+
+      for (const config of stackOrder) {
         try {
           const res = await fetch(config.file);
           if (res.ok) {
@@ -532,7 +562,8 @@
     function updateLegend() {
       const legendPanel = document.getElementById('legend-panel'), legendContent = document.getElementById('legend-content');
       let hasActive = false, html = '';
-      for (const config of layerConfigs) {
+      const panelOrder = [...layerConfigs].sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+      for (const config of panelOrder) {
         if (document.getElementById(`toggle-${config.id}`).checked) {
           hasActive = true;
           if (config.id === 'lotissements') {
@@ -565,9 +596,10 @@
       document.getElementById('kpi-total').textContent = originalFeatures.length;
       const total = originalFeatures.reduce((a, f) => a + getSurfaceM2(f), 0);
       document.getElementById('kpi-area').textContent = fmtNum(total);
-      const moas = new Set(originalFeatures.map(f => f.properties?.MOA || '-'));
-      document.getElementById('kpi-moa').textContent = moas.size;
-      document.getElementById('kpi-avg').textContent = originalFeatures.length ? fmtNum(total / originalFeatures.length) : 0;
+      const vendable = originalFeatures.reduce((a, f) => a + getVendableM2(f), 0);
+      document.getElementById('kpi-vendable').textContent = fmtNum(vendable);
+      const equip = originalFeatures.reduce((a, f) => a + getEquipmentSurfaceM2(f), 0);
+      document.getElementById('kpi-equip').textContent = fmtNum(equip);
       buildTable(originalFeatures);
     }
 
